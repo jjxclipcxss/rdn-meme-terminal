@@ -19,8 +19,12 @@ aside h3{margin:0 0 8px;color:#ffe600;text-shadow:0 0 6px #ffe600}aside ol{margi
 .bub{position:fixed;left:0;top:0;transition:opacity .4s;z-index:11;background:#fff;color:#000;font-weight:700;padding:5px 9px;border-radius:10px;white-space:nowrap;pointer-events:none;box-shadow:0 0 10px #ff2bd6}
 #st{color:#8a7bb0;padding:0 18px}footer{text-align:center;color:#6d5f90;padding:14px}a{color:#00e5ff}
 @media(max-width:800px){.wrap{grid-template-columns:1fr}}
+#bal{margin:12px 18px 4px;padding:12px 16px;border:2px solid #ffe600;border-radius:10px;box-shadow:0 0 16px #ffe60088;display:flex;gap:18px;align-items:center;flex-wrap:wrap;background:#0b0718}
+.bl{color:#ffe600;font-weight:700;letter-spacing:3px;text-shadow:0 0 6px #ffe600}#bv{font-size:34px;font-weight:900;color:#fff;transition:color .2s,text-shadow .2s}
+#bv.fu{color:#39ff14;text-shadow:0 0 18px #39ff14}#bv.fd{color:#ff3860;text-shadow:0 0 18px #ff3860}.bn{font-size:10px;color:#8a7bb0;width:100%}
 </style></head><body>
 <header><h1>🕷️ RDN SPIDER TERMINAL</h1><div class="hud"><div>SCORE <b id="score">000000</b></div><div>NEXT POLL <b id="cd">--</b>s</div><button id="snd">🔇 SOUND OFF</button><a href="../">← Terminal</a></div></header>
+<div id="bal"><div class="bl">PRACTICE BALANCE</div><div id="bv">$1,000.00</div><div id="bp">P/L $0.00 (0.00%) since start</div><button id="brst">↺ RESET</button><div class="bn">Simulated play money · not real funds · not financial advice</div></div>
 <div id="st">Loading real prices…</div>
 <div class="wrap"><div id="grid"></div><aside><h3>🏆 BIGGEST MOVERS 24H</h3><ol id="lb"></ol><p class="lbl">Line motion between polls is <b>interpolated</b> animation. Displayed price numbers are always the last real CoinGecko price.</p></aside></div>
 <canvas id="trail"></canvas>
@@ -98,5 +102,15 @@ addEventListener("scroll",assign);addEventListener("resize",assign);
   s.el.style.transform=`translate(${s.x}px,${s.y+wob}px) rotate(${(s.tx-s.x)*0.05}deg)`;
   const bw=s.b.offsetWidth;s.b.style.transform=`translate(${s.x+s.sz+bw>innerWidth?s.x-bw-4:s.x+s.sz-4}px,${s.y-20+wob}px)`});
  requestAnimationFrame(loop)})(0);
+// practice balance (simulated only)
+const BK="rdnSpiderPractice";let PB=JSON.parse(localStorage.getItem(BK)||"null"),lastV=null;
+function balTick(){const ids=order.filter(i=>coins[i].price!=null);if(!ids.length)return;
+ if(!PB||!PB.start){PB={t:Date.now(),start:{}};ids.forEach(i=>PB.start[i]=coins[i].price);localStorage.setItem(BK,JSON.stringify(PB))}
+ const held=Object.keys(PB.start).filter(i=>coins[i]&&coins[i].price!=null);if(!held.length)return;
+ const per=1000/Object.keys(PB.start).length;let v=0;for(const i in PB.start)v+=coins[i]&&coins[i].price!=null?per*coins[i].price/PB.start[i]:per;
+ const pl=v-1000,f=n=>n.toLocaleString("en-US",{style:"currency",currency:"USD"});$("bv").textContent=f(v);
+ $("bp").innerHTML=`P/L <span class="${pl>=0?"up":"dn"}">${pl>=0?"+":""}${f(pl)} (${pl>=0?"+":""}${(pl/10).toFixed(2)}%)</span> since ${new Date(PB.t).toLocaleString()}`;
+ if(lastV!=null&&Math.abs(v-lastV)>1e-6){const e=$("bv");e.className=v>lastV?"fu":"fd";setTimeout(()=>e.className="",400)}lastV=v}
+setInterval(balTick,1000);$("brst").onclick=()=>{localStorage.removeItem(BK);PB=null;lastV=null;balTick()};
 poll();
 </script></body></html>
