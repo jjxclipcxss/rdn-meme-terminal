@@ -14,9 +14,9 @@ button{background:#14002a;color:#ff2bd6;border:1px solid #ff2bd6;padding:5px 10p
 canvas.c{width:100%;height:80px;display:block}.p{font-size:14px;color:#fff}.lbl{font-size:9px;color:#8a7bb0}
 aside{background:#0b0718;border:1px solid #00e5ff;border-radius:8px;padding:10px;box-shadow:0 0 10px #00e5ff55;height:fit-content}
 aside h3{margin:0 0 8px;color:#ffe600;text-shadow:0 0 6px #ffe600}aside ol{margin:0;padding-left:20px}aside li{margin:4px 0}
-#skull{position:fixed;left:0;top:0;width:64px;height:64px;pointer-events:none;z-index:10;filter:drop-shadow(0 0 10px #39ff14) drop-shadow(0 0 14px #ff2bd6)}
+.sp{position:fixed;left:0;top:0;pointer-events:none;z-index:10}.sp svg{width:100%;height:100%;filter:drop-shadow(0 0 8px var(--c2))}.src{font-size:9px;float:right}.src.b{color:#39ff14}.src.g{color:#ffe600}
 #trail{position:fixed;inset:0;pointer-events:none;z-index:9}
-#bub{position:fixed;left:0;top:0;z-index:11;background:#fff;color:#000;font-weight:700;padding:5px 9px;border-radius:10px;white-space:nowrap;pointer-events:none;box-shadow:0 0 10px #ff2bd6}
+.bub{position:fixed;left:0;top:0;transition:opacity .4s;z-index:11;background:#fff;color:#000;font-weight:700;padding:5px 9px;border-radius:10px;white-space:nowrap;pointer-events:none;box-shadow:0 0 10px #ff2bd6}
 #st{color:#8a7bb0;padding:0 18px}footer{text-align:center;color:#6d5f90;padding:14px}a{color:#00e5ff}
 @media(max-width:800px){.wrap{grid-template-columns:1fr}}
 </style></head><body>
@@ -24,52 +24,79 @@ aside h3{margin:0 0 8px;color:#ffe600;text-shadow:0 0 6px #ffe600}aside ol{margi
 <div id="st">Loading real prices…</div>
 <div class="wrap"><div id="grid"></div><aside><h3>🏆 BIGGEST MOVERS 24H</h3><ol id="lb"></ol><p class="lbl">Line motion between polls is <b>interpolated</b> animation. Displayed price numbers are always the last real CoinGecko price.</p></aside></div>
 <canvas id="trail"></canvas>
-<svg id="skull" viewBox="0 0 64 64"><style>.lg{stroke:#e8e0ff;stroke-width:2.2;fill:none;stroke-linecap:round}.L{transform-origin:32px 34px;animation:wg .18s infinite alternate ease-in-out}.R{transform-origin:32px 34px;animation:wg .18s infinite alternate-reverse ease-in-out}@keyframes wg{from{transform:rotate(-7deg)}to{transform:rotate(7deg)}}</style>
-<g class="L"><path class="lg" d="M28 30 Q16 18 8 22"/><path class="lg" d="M27 33 Q14 28 5 34"/><path class="lg" d="M27 36 Q14 40 6 48"/><path class="lg" d="M28 39 Q18 50 12 58"/></g>
+<svg width="0" height="0" style="position:absolute"><style>.lg{stroke:var(--leg);stroke-width:2.2;fill:none;stroke-linecap:round}.L{transform-origin:32px 34px;animation:wg .18s infinite alternate ease-in-out}.R{transform-origin:32px 34px;animation:wg .18s infinite alternate-reverse ease-in-out}@keyframes wg{from{transform:rotate(-7deg)}to{transform:rotate(7deg)}}</style><defs><symbol id="spd" viewBox="0 0 64 64"><g class="L"><path class="lg" d="M28 30 Q16 18 8 22"/><path class="lg" d="M27 33 Q14 28 5 34"/><path class="lg" d="M27 36 Q14 40 6 48"/><path class="lg" d="M28 39 Q18 50 12 58"/></g>
 <g class="R"><path class="lg" d="M36 30 Q48 18 56 22"/><path class="lg" d="M37 33 Q50 28 59 34"/><path class="lg" d="M37 36 Q50 40 58 48"/><path class="lg" d="M36 39 Q46 50 52 58"/></g>
-<ellipse cx="32" cy="42" rx="10" ry="12" fill="#1a0b2e" stroke="#ff2bd6" stroke-width="1.5"/><path d="M28 40 L32 46 L36 40 M28 46 L32 50 L36 46" stroke="#ff3860" stroke-width="2" fill="none"/>
-<circle cx="32" cy="28" r="7" fill="#1a0b2e" stroke="#39ff14" stroke-width="1.5"/><circle cx="29" cy="27" r="1.8" fill="#39ff14"/><circle cx="35" cy="27" r="1.8" fill="#39ff14"/><circle cx="31" cy="24.5" r="1" fill="#ff2bd6"/><circle cx="33" cy="24.5" r="1" fill="#ff2bd6"/></svg>
-<div id="bub">🕷️ loading…</div>
-<footer>RDN Spider Terminal · Data: CoinGecko · Game visuals only · Not financial advice</footer>
+<ellipse cx="32" cy="42" rx="10" ry="12" fill="#1a0b2e" stroke="var(--c1)" stroke-width="1.5"/><path d="M28 40 L32 46 L36 40 M28 46 L32 50 L36 46" stroke="#ff3860" stroke-width="2" fill="none"/>
+<circle cx="32" cy="28" r="7" fill="#1a0b2e" stroke="var(--c2)" stroke-width="1.5"/><circle cx="29" cy="27" r="1.8" fill="var(--c2)"/><circle cx="35" cy="27" r="1.8" fill="var(--c2)"/><circle cx="31" cy="24.5" r="1" fill="var(--c1)"/><circle cx="33" cy="24.5" r="1" fill="var(--c1)"/></symbol></defs></svg><div id="spiders"></div>
+
+<footer>RDN Spider Terminal · Data: Binance &amp; CoinGecko · Game visuals only · Not financial advice</footer>
 <script>
 const API="https://api.coingecko.com/api/v3",BASE=["dogecoin","shiba-inu","pepe","bonk","dogwifcoin","pudgy-penguins"],POLL=10000;
-let coins={},order=[],score=0,sound=false,next=Date.now()+POLL,actx;
+let coins={},order=[],score=0,sound=false,next=Date.now()+POLL,actx,bsrc=null,bmap={},pend={};
 const $=i=>document.getElementById(i),st=m=>$("st").textContent=m;
 const fmt=p=>p==null?"—":p>=1?"$"+p.toFixed(4):"$"+p.toFixed(Math.min(12,-Math.floor(Math.log10(p))+3));
 async function get(u){const r=await fetch(u);if(r.status===429)throw Error("rate limited");if(!r.ok)throw Error("HTTP "+r.status);return r.json()}
+function setReal(o,price,ch,src){const prev=o.price;o.price=price;if(ch!=null)o.ch=ch;o.src=src;const now=Date.now();o.pts.push([now,price]);while(o.pts.length&&now-o.pts[0][0]>60000)o.pts.shift();
+ o.recent=(price-o.pts[0][1])/o.pts[0][1]*100;
+ o.el.querySelector(".p").textContent=fmt(price);const e=o.el.querySelector(".ch");e.textContent=(o.ch>=0?"+":"")+(o.ch||0).toFixed(2)+"%";e.className="ch "+(o.ch>=0?"up":"dn");
+ const s=o.el.querySelector(".src");s.textContent=src=="b"?"live 1s · "+bsrc.name:"10s · CoinGecko";s.className="src "+src;
+ if(prev&&price!==prev)score+=1}
 async function poll(){next=Date.now()+POLL;try{
- const ids=order.length?order.join(","):"";
- let d;if(order.length){d=await get(`${API}/coins/markets?vs_currency=usd&ids=${order.join(",")}&per_page=50`)}else{d=await get(`${API}/coins/markets?vs_currency=usd&category=meme-token&order=market_cap_desc&per_page=16&page=1&price_change_percentage=24h`);
+ let d;if(order.length){const ids=order.filter(i=>coins[i].src!=="b");d=ids.length?await get(`${API}/coins/markets?vs_currency=usd&ids=${ids.join(",")}&per_page=50`):[]}else{d=await get(`${API}/coins/markets?vs_currency=usd&category=meme-token&order=market_cap_desc&per_page=16&page=1`);
  const miss=BASE.filter(id=>!d.find(c=>c.id===id));if(miss.length)d=d.concat(await get(`${API}/coins/markets?vs_currency=usd&ids=${miss.join(",")}`))}
  d.sort((a,b)=>(BASE.indexOf(b.id)>=0)-(BASE.indexOf(a.id)>=0));
- let best=null;
- const seen=new Set();for(const c of d){if(seen.has(c.symbol.toUpperCase())&&!coins[c.id])continue;seen.add(c.symbol.toUpperCase());if(order.length>=16&&!coins[c.id])continue;let o=coins[c.id];if(!o){o=coins[c.id]={id:c.id,sym:c.symbol.toUpperCase(),hist:[],disp:c.current_price,el:card(c)};order.push(c.id)}
-  const prev=o.price;o.price=c.current_price;o.ch=c.price_change_percentage_24h;
-  const tick=prev?(o.price-prev)/prev*100:0;o.tick=tick;
-  if(!o.hist.length)o.hist=Array(60).fill(o.price);
-  if(!best||Math.abs(tick)>Math.abs(best.tick)||(!tick&&!best.tick&&Math.abs(o.ch||0)>Math.abs(best.ch||0)))best=o;
-  o.el.querySelector(".p").textContent=fmt(o.price);const e=o.el.querySelector(".ch");e.textContent=(o.ch>=0?"+":"")+(o.ch||0).toFixed(2)+"%";e.className="ch "+(o.ch>=0?"up":"dn")}
- board();if(best)fly(best);st("Last real update "+new Date().toLocaleTimeString()+" · "+order.length+" coins · polling every 10s");
+ const seen=new Set(order.map(i=>coins[i].sym));for(const c of d){let o=coins[c.id];const S=c.symbol.toUpperCase();
+  if(!o){if(seen.has(S)||order.length>=16)continue;seen.add(S);o=coins[c.id]={id:c.id,sym:S,hist:[],pts:[],disp:c.current_price,cg:c.current_price,el:card(c)};order.push(c.id)}
+  o.cg=c.current_price;if(o.src!=="b")setReal(o,c.current_price,c.price_change_percentage_24h,"g");
+  if(!o.hist.length)o.hist=Array(240).fill(o.price)}
+ if(!bsrc&&!window._bt){window._bt=1;startBinance()}
+ st(statusTxt());
 }catch(e){st("CoinGecko "+e.message+" — keeping last real prices, backing off 60s");next=Date.now()+60000}
  setTimeout(poll,next-Date.now())}
-function card(c){const d=document.createElement("div");d.className="card";d.innerHTML=`<div class="t"><span class="sym">${c.symbol.toUpperCase()}</span><span class="ch"></span></div><div class="p"></div><canvas class="c"></canvas><div class="lbl">line: interpolated · price: last real</div>`;$("grid").appendChild(d);return d}
-function board(){const a=order.map(i=>coins[i]).sort((x,y)=>Math.abs(y.ch||0)-Math.abs(x.ch||0)).slice(0,8);$("lb").innerHTML=a.map(o=>`<li><b>${o.sym}</b> <span class="${o.ch>=0?"up":"dn"}">${(o.ch>=0?"+":"")+o.ch.toFixed(2)}%</span></li>`).join("")}
-// animation ~10fps
-setInterval(()=>{$("cd").textContent=Math.max(0,Math.ceil((next-Date.now())/1000));for(const id of order){const o=coins[id];
- o.disp+=(o.price-o.disp)*0.15;const v=o.disp*(1+(Math.random()-.5)*0.0006);o.hist.push(v);if(o.hist.length>240)o.hist.shift();draw(o)}},50);
+function statusTxt(){const nb=order.filter(i=>coins[i].src=="b").length;return `${order.length} coins · ${nb} live 1s via ${bsrc?bsrc.name:"(Binance unavailable)"} · ${order.length-nb} via CoinGecko every 10s · updated ${new Date().toLocaleTimeString()}`}
+function card(c){const d=document.createElement("div");d.className="card";d.innerHTML=`<div class="t"><span class="sym">${c.symbol.toUpperCase()}</span><span class="ch"></span></div><div class="p"></div><canvas class="c"></canvas><div class="lbl">line: interpolated · price: last real <span class="src g">10s · CoinGecko</span></div>`;$("grid").appendChild(d);return d}
+// Binance: prefer data-stream.binance.vision, then binance.us
+const BIN=[{name:"Binance",rest:"https://data-api.binance.vision/api/v3/ticker/price",ws:"wss://data-stream.binance.vision/stream?streams="},
+ {name:"Binance",rest:"https://data-api.binance.vision/api/v3/ticker/price",ws:"wss://stream.binance.com:9443/stream?streams="},
+ {name:"Binance.US",rest:"https://api.binance.us/api/v3/ticker/price",ws:"wss://stream.binance.us:9443/stream?streams="}];
+async function startBinance(k=0){if(k>=BIN.length){st(statusTxt());return}const B=BIN[k];
+ try{const r=await fetch(B.rest);if(!r.ok)throw 0;const l=await r.json(),have={};l.forEach(x=>have[x.symbol]=+x.price);
+  const map={};for(const id of order){const o=coins[id],p=have[o.sym+"USDT"];if(p&&Math.abs(p/o.cg-1)<0.15)map[(o.sym+"usdt").toLowerCase()]=id}
+  if(!Object.keys(map).length)throw 0;
+  const ws=new WebSocket(B.ws+Object.keys(map).map(s=>s+"@miniTicker").join("/"));let ok=false;
+  const to=setTimeout(()=>{if(!ok){ws.close();startBinance(k+1)}},6000);
+  ws.onmessage=e=>{const m=JSON.parse(e.data).data;if(!m)return;if(!ok){ok=true;clearTimeout(to);bsrc=B;bmap=map}pend[map[m.s.toLowerCase()]]=m};
+  ws.onclose=()=>{if(ok){bsrc=null;for(const id in bmap)coins[id].src="g";setTimeout(()=>startBinance(0),5000)}};ws.onerror=()=>{};
+ }catch(e){startBinance(k+1)}}
+setInterval(()=>{for(const id in pend){const m=pend[id],o=coins[id];setReal(o,+m.c,(m.c-m.o)/m.o*100,"b")}pend={};if(bsrc)st(statusTxt());board();assign()},1000);
+function board(){const a=order.map(i=>coins[i]).filter(o=>o.ch!=null).sort((x,y)=>Math.abs(y.ch)-Math.abs(x.ch)).slice(0,8);$("lb").innerHTML=a.map(o=>`<li><b>${o.sym}</b> <span class="${o.ch>=0?"up":"dn"}">${(o.ch>=0?"+":"")+o.ch.toFixed(2)}%</span></li>`).join("");$("score").textContent=String(score).padStart(6,"0")}
+// line animation 20fps
+setInterval(()=>{$("cd").textContent=Math.max(0,Math.ceil((next-Date.now())/1000));for(const id of order){const o=coins[id];if(o.price==null)continue;
+ o.disp+=(o.price-o.disp)*0.3;const v=o.disp*(1+(Math.random()-.5)*0.0002);o.hist.push(v);if(o.hist.length>240)o.hist.shift();draw(o)}},50);
 function draw(o){const c=o.el.querySelector("canvas"),w=c.width=c.clientWidth,h=c.height=80,x=c.getContext("2d"),a=o.hist,mn=Math.min(...a),mx=Math.max(...a),r=Math.max(mx-mn,mn*0.004)||1,lo=(mx+mn)/2-r/2;
  const col=o.ch>=0?"#39ff14":"#ff3860";x.strokeStyle=col;x.shadowColor=col;x.shadowBlur=8;x.lineWidth=2;x.beginPath();
  a.forEach((v,i)=>{const px=i/(a.length-1)*w,py=h-4-(v-lo)/r*(h-8);i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke()}
-// skull
-let sx=innerWidth/2,sy=200,tx=sx,ty=sy,trail=[];const tc=$("trail"),tg=tc.getContext("2d");
-function fly(o){document.querySelectorAll(".card.hot").forEach(e=>e.classList.remove("hot"));o.el.classList.add("hot");
- const b=o.el.getBoundingClientRect();tx=b.left+b.width-40;ty=b.top-20;const up=(o.tick||o.ch)>=0,pct=o.tick?o.tick:o.ch;
- $("bub").textContent=up?`${o.sym} ${(pct>=0?"+":"")+pct.toFixed(Math.abs(pct)<.1?3:1)}% 🚀`:`${o.sym} dumping ${pct.toFixed(Math.abs(pct)<.1?3:1)}% 🕷️`;
- score+=Math.round(Math.abs(o.tick||o.ch||0)*1000)+10;$("score").textContent=String(score).padStart(6,"0");if(sound)beep(up)}
+// 9 spiders
+const PAL=[["#ff2bd6","#39ff14"],["#00e5ff","#ffe600"],["#ffe600","#ff3860"],["#39ff14","#00e5ff"],["#ff8a00","#ff2bd6"],["#b26bff","#39ff14"],["#ff3860","#00e5ff"],["#00ffa3","#ff8a00"],["#ffffff","#b26bff"]];
+const tc=$("trail"),tg=tc.getContext("2d"),SP=[];
+for(let i=0;i<9;i++){const sz=Math.round(64-i*4),[c1,c2]=PAL[i],el=document.createElement("div");el.className="sp";el.style.cssText+=`width:${sz}px;height:${sz}px;--c1:${c1};--c2:${c2};--leg:${i%2?"#e8e0ff":c2}`;
+ el.innerHTML=`<svg viewBox="0 0 64 64"><use href="#spd"/></svg>`;const b=document.createElement("div");b.className="bub";b.style.opacity=0;b.style.borderBottom=`3px solid ${c1}`;
+ document.body.append(el,b);SP.push({el,b,sz,x:Math.random()*innerWidth,y:innerHeight-80,tx:0,ty:0,trail:[],c1,id:null,ph:Math.random()*6})}
+function assign(){const r=order.map(i=>coins[i]).filter(o=>o.price!=null).sort((a,b)=>(Math.abs(b.recent||0)-Math.abs(a.recent||0))||(Math.abs(b.ch||0)-Math.abs(a.ch||0)));
+ document.querySelectorAll(".card.hot").forEach(e=>e.classList.remove("hot"));
+ SP.forEach((s,i)=>{const o=r[i];if(!o)return;if(s.id!==o.id&&i===0&&sound)beep((o.recent||o.ch)>=0);s.id=o.id;o.el.classList.add("hot");
+  const bb=o.el.getBoundingClientRect();s.tx=bb.left+bb.width-s.sz-6;s.ty=bb.top+bb.height-s.sz-14;
+  const pct=Math.abs(o.recent||0)>0.0005?o.recent:o.ch,lbl=Math.abs(o.recent||0)>0.0005?"1m":"24h",up=pct>=0;
+  s.b.textContent=`#${i+1} ${o.sym} ${up?"+":""}${pct.toFixed(Math.abs(pct)<.1?3:1)}% ${lbl} ${up?"🚀":"🕷️"}`;
+  const slot=Math.floor(Date.now()/2500)%3;s.b.style.opacity=(i%3===slot)?1:0})}
 function beep(up){actx=actx||new AudioContext();const g=actx.createGain(),os=actx.createOscillator();os.type="square";os.frequency.value=up?880:220;g.gain.value=.05;os.connect(g).connect(actx.destination);os.start();os.stop(actx.currentTime+.12)}
 $("snd").onclick=()=>{sound=!sound;$("snd").textContent=sound?"🔊 SOUND ON":"🔇 SOUND OFF"};
-(function loop(t){sx+=(tx-sx)*0.12;sy+=(ty-sy)*0.12;const wob=Math.sin(t/100)*4;trail.push([sx+32,sy+32]);if(trail.length>60)trail.shift();
- tc.width=innerWidth;tc.height=innerHeight;tg.strokeStyle='rgba(235,230,255,.55)';tg.lineWidth=1;tg.beginPath();trail.forEach((p,i)=>i?tg.lineTo(p[0],p[1]):tg.moveTo(p[0],p[1]));tg.stroke();tg.beginPath();tg.moveTo(sx+32,0);tg.lineTo(sx+32,sy+20);tg.strokeStyle='rgba(235,230,255,.25)';tg.stroke();
- $("skull").style.transform=`translate(${sx}px,${sy+wob}px) rotate(${(tx-sx)*0.05}deg)`;const bw=$("bub").offsetWidth;$("bub").style.transform=`translate(${sx+70+bw>innerWidth?sx-bw-6:sx+60}px,${sy+wob}px)`;requestAnimationFrame(loop)})(0);
+addEventListener("scroll",assign);addEventListener("resize",assign);
+(function loop(t){tc.width=innerWidth;tc.height=innerHeight;
+ SP.forEach((s,i)=>{s.x+=(s.tx-s.x)*0.12;s.y+=(s.ty-s.y)*0.12;const wob=Math.sin(t/100+s.ph)*3;s.trail.push([s.x+s.sz/2,s.y+s.sz/2]);if(s.trail.length>40)s.trail.shift();
+  tg.strokeStyle="rgba(235,230,255,.35)";tg.lineWidth=1;tg.beginPath();s.trail.forEach((p,k)=>k?tg.lineTo(p[0],p[1]):tg.moveTo(p[0],p[1]));tg.stroke();
+  s.el.style.transform=`translate(${s.x}px,${s.y+wob}px) rotate(${(s.tx-s.x)*0.05}deg)`;
+  const bw=s.b.offsetWidth;s.b.style.transform=`translate(${s.x+s.sz+bw>innerWidth?s.x-bw-4:s.x+s.sz-4}px,${s.y-20+wob}px)`});
+ requestAnimationFrame(loop)})(0);
 poll();
 </script></body></html>
