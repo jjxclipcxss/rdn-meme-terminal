@@ -43,7 +43,7 @@ async function get(u){const r=await fetch(u);if(r.status===429)throw Error("rate
 function setReal(o,price,ch,src){const prev=o.price;o.price=price;if(ch!=null)o.ch=ch;o.src=src;const now=Date.now();o.pts.push([now,price]);while(o.pts.length&&now-o.pts[0][0]>60000)o.pts.shift();
  o.recent=(price-o.pts[0][1])/o.pts[0][1]*100;
  o.el.querySelector(".p").textContent=fmt(price);const e=o.el.querySelector(".ch");e.textContent=(o.ch>=0?"+":"")+(o.ch||0).toFixed(2)+"%";e.className="ch "+(o.ch>=0?"up":"dn");
- const s=o.el.querySelector(".src");s.textContent=src=="b"?"live 1s · "+bsrc.name:"10s · CoinGecko";s.className="src "+src;
+ const s=o.el.querySelector(".src");s.textContent=src=="b"?"5s · "+bsrc.name:"10s · CoinGecko";s.className="src "+src;
  if(prev&&price!==prev)score+=1}
 async function poll(){next=Date.now()+POLL;try{
  let d;if(order.length){const ids=order.filter(i=>coins[i].src!=="b");d=ids.length?await get(`${API}/coins/markets?vs_currency=usd&ids=${ids.join(",")}&per_page=50`):[]}else{d=await get(`${API}/coins/markets?vs_currency=usd&category=meme-token&order=market_cap_desc&per_page=16&page=1`);
@@ -57,7 +57,7 @@ async function poll(){next=Date.now()+POLL;try{
  st(statusTxt());
 }catch(e){st("CoinGecko "+e.message+" — keeping last real prices, backing off 60s");next=Date.now()+60000}
  setTimeout(poll,next-Date.now())}
-function statusTxt(){const nb=order.filter(i=>coins[i].src=="b").length;return `${order.length} coins · ${nb} live 1s via ${bsrc?bsrc.name:"(Binance unavailable)"} · ${order.length-nb} via CoinGecko every 10s · updated ${new Date().toLocaleTimeString()}`}
+function statusTxt(){const nb=order.filter(i=>coins[i].src=="b").length;return `${order.length} coins · ${nb} every 5s via ${bsrc?bsrc.name:"(Binance unavailable)"} · ${order.length-nb} via CoinGecko every 10s · updated ${new Date().toLocaleTimeString()}`}
 function card(c){const d=document.createElement("div");d.className="card";d.innerHTML=`<div class="t"><span class="sym">${c.symbol.toUpperCase()}</span><span class="ch"></span></div><div class="p"></div><canvas class="c"></canvas><div class="lbl">line: interpolated · price: last real <span class="src g">10s · CoinGecko</span></div>`;$("grid").appendChild(d);return d}
 // Binance: prefer data-stream.binance.vision, then binance.us
 const BIN=[{name:"Binance",rest:"https://data-api.binance.vision/api/v3/ticker/price",ws:"wss://data-stream.binance.vision/stream?streams="},
@@ -72,7 +72,7 @@ async function startBinance(k=0){if(k>=BIN.length){st(statusTxt());return}const 
   ws.onmessage=e=>{const m=JSON.parse(e.data).data;if(!m)return;if(!ok){ok=true;clearTimeout(to);bsrc=B;bmap=map}pend[map[m.s.toLowerCase()]]=m};
   ws.onclose=()=>{if(ok){bsrc=null;for(const id in bmap)coins[id].src="g";setTimeout(()=>startBinance(0),5000)}};ws.onerror=()=>{};
  }catch(e){startBinance(k+1)}}
-setInterval(()=>{for(const id in pend){const m=pend[id],o=coins[id];setReal(o,+m.c,(m.c-m.o)/m.o*100,"b")}pend={};if(bsrc)st(statusTxt());board();assign()},1000);
+function applyB(){for(const id in pend){const m=pend[id],o=coins[id];setReal(o,+m.c,(m.c-m.o)/m.o*100,"b")}pend={};if(bsrc)st(statusTxt())}setInterval(applyB,5000);setTimeout(applyB,1500);setInterval(()=>{board();assign()},1000);
 function board(){const a=order.map(i=>coins[i]).filter(o=>o.ch!=null).sort((x,y)=>Math.abs(y.ch)-Math.abs(x.ch)).slice(0,8);$("lb").innerHTML=a.map(o=>`<li><b>${o.sym}</b> <span class="${o.ch>=0?"up":"dn"}">${(o.ch>=0?"+":"")+o.ch.toFixed(2)}%</span></li>`).join("");$("score").textContent=String(score).padStart(6,"0")}
 // line animation 20fps
 setInterval(()=>{$("cd").textContent=Math.max(0,Math.ceil((next-Date.now())/1000));for(const id of order){const o=coins[id];if(o.price==null)continue;
