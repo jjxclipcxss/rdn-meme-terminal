@@ -12,13 +12,25 @@ class Spider{
  rest(i,lead=0){const k=i%4,sd=this.side(i);return this.w(FX[k]*this.S+lead,sd*FY[k]*this.S)}
  hip(i){const k=i%4;return this.w(HX[k]*this.S,this.side(i)*.12*this.S)}
  // curved path to a target (skull mode)
- setTarget(tx,ty,bend=.35){if(Math.hypot(tx-this.tx,ty-this.ty)<3)return;this.tx=tx;this.ty=ty;
+ setTarget(tx,ty,bend=.35){if(this.jump){this.jump.pend=[tx,ty];return}if(Math.hypot(tx-this.tx,ty-this.ty)<3)return;this.tx=tx;this.ty=ty;
   if(RM.matches){this.x=this.cx=tx;this.y=this.cy=ty;this.path=null;for(let i=0;i<8;i++){const p=this.rest(i);this.legs[i].fx=p[0];this.legs[i].fy=p[1];this.legs[i].step=null}return}
   const sx=this.cx,sy=this.cy,dx=tx-sx,dy=ty-sy,L=Math.hypot(dx,dy)||1,sg=(Math.random()<.5?-1:1)*bend*L;
   this.path={sx,sy,qx:(sx+tx)/2-dy/L*sg,qy:(sy+ty)/2+dx/L*sg,tx,ty,t:0,dur:Math.max(.35,L/this.speed)}}
+ // fast parabolic leap
+ leap(tx,ty,dur){if(RM.matches){this.setTarget(tx,ty);return}if(this.jump)return;const d=Math.hypot(tx-this.x,ty-this.y);dur=dur||Math.min(.7,Math.max(.4,.3+d/1600));
+  this.jump={sx:this.x,sy:this.y,tx,ty,t:0,dur,h:Math.min(140,30+d*.35)};this.path=null;this.cx=tx;this.cy=ty;this.tx=tx;this.ty=ty;for(const L of this.legs)L.step=null}
+ hop(r){const a=Math.random()*6.283,d=r*(.5+Math.random()*.5);this.leap(this.x+Math.cos(a)*d,this.y+Math.sin(a)*d*.6,.32+Math.random()*.12)}
+ get airborne(){return!!this.jump}
  // direct carrot (desk mode)
- setCarrot(x,y){this.path=null;this.cx=x;this.cy=y;this.tx=x;this.ty=y;if(RM.matches){this.x=x;this.y=y}}
- update(dt){dt=Math.min(dt,.05);if(this.path){const p=this.path;p.t=Math.min(1,p.t+dt/p.dur);const e=ease(p.t),u=1-e;
+ setCarrot(x,y){if(this.jump){this.jump.pend=null;this.jump.carrot=[x,y];return}this.path=null;this.cx=x;this.cy=y;this.tx=x;this.ty=y;if(RM.matches){this.x=x;this.y=y}}
+ update(dt){dt=Math.min(dt,.05);this.squash=Math.max(0,(this.squash||0)-dt);
+  if(this.jump){const j=this.jump;j.t=Math.min(1,j.t+dt/j.dur);const px=this.x,py=this.y,k=j.t; this.x=lerp(j.sx,j.tx,k);this.y=lerp(j.sy,j.ty,k)-j.h*4*k*(1-k);this.vx=(this.x-px)/dt;this.vy=(this.y-py)/dt;
+   const d=ang(Math.atan2(j.ty-j.sy,j.tx-j.sx)-this.h);this.h+=d*Math.min(1,dt*14);
+   for(let i=0;i<8;i++){const r=this.rest(i),L=this.legs[i];L.fx=lerp(this.x,r[0],.38);L.fy=lerp(this.y,r[1],.38)-this.S*.15;L.lift=0}
+   if(j.t>=1){this.jump=null;this.vx=this.vy=0;this.squash=.22;this.x=j.tx;this.y=j.ty;this.cx=j.tx;this.cy=j.ty;
+    for(let i=0;i<8;i++){const r=this.rest(i),L=this.legs[i];L.step={ox:L.fx,oy:L.fy,nx:r[0],ny:r[1],t:0,d:.12}}
+    if(j.carrot){this.cx=j.carrot[0];this.cy=j.carrot[1]}else if(j.pend){const p=j.pend;this.tx=this.ty=1e9;this.setTarget(p[0],p[1])}}
+   else return}if(this.path){const p=this.path;p.t=Math.min(1,p.t+dt/p.dur);const e=ease(p.t),u=1-e;
    this.cx=u*u*p.sx+2*u*e*p.qx+e*e*p.tx;this.cy=u*u*p.sy+2*u*e*p.qy+e*e*p.ty;if(p.t>=1)this.path=null}
   if(RM.matches){this.x=this.cx;this.y=this.cy;return}
   const k=60,ax=k*(this.cx-this.x)-2*Math.sqrt(k)*this.vx,ay=k*(this.cy-this.y)-2*Math.sqrt(k)*this.vy;
@@ -40,7 +52,7 @@ class Spider{
   this.legs.forEach((L,i)=>{const[hx,hy]=this.hip(i),R0=this.rest(i),rd=Math.hypot(R0[0]-hx,R0[1]-hy),a=rd*.56,b=rd*.56;let fx=L.fx,fy=L.fy-(L.lift||0)*.5;{const q=Math.hypot(fx-hx,fy-hy),m=(a+b)*.98;if(q>m){fx=hx+(fx-hx)/q*m;fy=hy+(fy-hy)/q*m}}const dx=fx-hx,dy=fy-hy,d=Math.min(Math.hypot(dx,dy),a+b-.01),base=Math.atan2(dy,dx);
    const ca=Math.acos(Math.max(-1,Math.min(1,(a*a+d*d-b*b)/(2*a*d))));let best=null,bd=-Infinity;for(const sg of[-1,1]){const kx=hx+Math.cos(base+sg*ca)*a,ky=hy+Math.sin(base+sg*ca)*a,dd=((kx-this.x)*-Math.sin(this.h)+(ky-this.y)*Math.cos(this.h))*this.side(i);if(dd>bd){bd=dd;best=[kx,ky]}}
    const kx=best[0],ky=best[1]-(L.lift||0);g.beginPath();g.moveTo(hx,hy);g.lineTo(kx,ky);g.lineTo(fx,fy);g.stroke()});
-  const bb=(1+this.bob*.06)*.8;g.translate(this.x,this.y-this.bob*S*.08);g.rotate(this.h);g.scale(bb,bb);
+  const bb=(1+this.bob*.06)*.8;g.translate(this.x,this.y-this.bob*S*.08);g.rotate(this.h);const q=this.squash>0?Math.sin(this.squash/.22*Math.PI):0,st=this.jump?1+.18*Math.sin(Math.PI*this.jump.t):1;g.scale(bb*(1+.28*q)*st,bb*(1-.25*q)/st);
   g.shadowColor=this.c1;g.shadowBlur=14;g.fillStyle="#1a0b2e";g.strokeStyle=this.c1;g.lineWidth=Math.max(1.2,S*.07);
   g.beginPath();g.ellipse(-.48*S,0,.5*S,.38*S,0,0,7);g.fill();g.stroke();
   g.fillStyle="#ff3860";g.shadowBlur=0;g.beginPath();g.moveTo(-.68*S,-.12*S);g.lineTo(-.48*S,0);g.lineTo(-.68*S,.12*S);g.moveTo(-.28*S,-.12*S);g.lineTo(-.48*S,0);g.lineTo(-.28*S,.12*S);g.strokeStyle="#ff3860";g.stroke();

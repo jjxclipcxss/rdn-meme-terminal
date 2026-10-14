@@ -191,11 +191,19 @@ function brain(o,dt){const name=o.name,cr=rect($("chart")),lastC=candles.at(-1),
  else if(name==="RISK"){park(o,$("mRisk").parentElement,.55,.85);o.msg=P.halted?"HALTED: drawdown limit":Date.now()/1000<P.pauseUntil?"paused after 3 losses":`1% risk/trade · streak ${P.streak}`}
  else if(name==="BANKER"){const b=rect($("bal")),ts=bc.timeScale(),pts=[];const h=P.hist,stp=Math.max(1,Math.floor(h.length/200));for(let i=0;i<h.length;i+=stp){const x=ts.timeToCoordinate(h[i].time),y=bs.priceToCoordinate(h[i].value);if(x!=null&&y!=null)pts.push([b.left+x,b.top+y])}
   if(h.length){const x=ts.timeToCoordinate(h.at(-1).time),y=bs.priceToCoordinate(h.at(-1).value);if(x!=null&&y!=null)pts.push([b.left+x,b.top+y])}crawlAlong(o,pts,dt,110);const pl=equity(px||0)-1000;o.msg=px?`paper P&L ${pl>=0?"+":""}${f$(pl)}`:"counting coins"}}
+let evN=0,trN=0,volCool=0;
+SPS.forEach((o,i)=>{o.next=performance.now()+2500+i*700+Math.random()*2000;o.kick=false});
+function kick(names){SPS.forEach(o=>{if(names.includes(o.name))o.kick=true})}
+setInterval(()=>{if(!live)return;if(P.trades.length!==trN){const t=P.trades[0];trN=P.trades.length;if(t)kick(t.side==="LONG"?["BUYER","STOP-LOSS","TAKE-PROFIT","BANKER","RISK"]:t.side==="SHORT"?["SELLER","STOP-LOSS","TAKE-PROFIT","BANKER","RISK"]:[t.why==="TP"?"TAKE-PROFIT":"STOP-LOSS","SELLER","BANKER","RISK"])}
+ const g=signals();if(g&&g.vr>2&&Date.now()>volCool){volCool=Date.now()+20000;kick(["VOLUME"])}},500);
+function lively(o,now){const p=o.sp;if(p.airborne||RDN_REDUCED.matches)return;const far=Math.hypot(p.cx-p.x,p.cy-p.y);
+ if(o.kick||far>150){o.kick=false;p.leap(p.cx,p.cy);o.next=now+3000+Math.random()*4000;return}
+ if(now>o.next){o.next=now+3500+Math.random()*5000;if(SPS.filter(s=>s.sp.airborne).length<2)p.hop(28+p.S*1.5)}}
 let lt=performance.now();
 (function loop(t){const dt=Math.min(.05,(t-lt)/1000);lt=t;if(ov.width!==innerWidth||ov.height!==innerHeight){ov.width=innerWidth;ov.height=innerHeight}og.clearRect(0,0,ov.width,ov.height);
  const slot=Math.floor(Date.now()/3000)%3;
- SPS.forEach((o,i)=>{try{if(candles.length&&m1.length)brain(o,dt)}catch(e){}const p=o.sp;p.update(dt);o.trail.push([p.x,p.y]);if(o.trail.length>45)o.trail.shift();
-  og.strokeStyle="rgba(235,230,255,.28)";og.lineWidth=1;og.beginPath();o.trail.forEach((q,k)=>k?og.lineTo(q[0],q[1]):og.moveTo(q[0],q[1]));og.stroke()});
+ SPS.forEach((o,i)=>{try{if(candles.length&&m1.length)brain(o,dt)}catch(e){}lively(o,t);const p=o.sp;p.update(dt);o.trail.push([p.x,p.y,p.airborne]);if(o.trail.length>45)o.trail.shift();
+  const air=o.trail.some(q=>q[2]);og.save();if(air){og.shadowColor=p.c1;og.shadowBlur=14;og.strokeStyle=p.c1;og.lineWidth=2.5}else{og.strokeStyle="rgba(235,230,255,.28)";og.lineWidth=1}og.beginPath();o.trail.forEach((q,k)=>k?og.lineTo(q[0],q[1]):og.moveTo(q[0],q[1]));og.stroke();og.restore()});
  SPS.forEach(o=>o.sp.draw(og));
  SPS.forEach((o,i)=>{const p=o.sp,b=o.b,txt=`${o.name}: ${o.msg}`;if(b.textContent!==txt)b.textContent=txt;const on=i%3===slot||(i===8);b.style.opacity=on?1:0;const bw=b.offsetWidth;
   b.style.transform=`translate(${Math.max(4,Math.min(innerWidth-bw-4,p.x-bw/2))}px,${p.y-p.S*1.6-22}px)`});
