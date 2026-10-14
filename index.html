@@ -1,0 +1,54 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RDN Meme Terminal</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#07090d;color:#d6dbe4;font:13px/1.4 Inter,system-ui,sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid #1b2130}
+h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.5px}h1 span{color:#2ee6a6}
+.live{font-family:monospace;background:#11151d;border:1px solid #232a38;border-radius:8px;padding:6px 12px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#2ee6a6;margin-right:6px}
+main{display:grid;grid-template-columns:320px 1fr;gap:14px;padding:14px 22px}
+.panel{background:#0d1118;border:1px solid #1b2130;border-radius:10px;padding:12px}
+.ptitle{font-size:11px;letter-spacing:1px;color:#7d8799;text-transform:uppercase;margin-bottom:8px}
+input{width:100%;background:#11151d;border:1px solid #232a38;color:#d6dbe4;padding:9px 10px;border-radius:7px;margin-bottom:10px}
+table{width:100%;border-collapse:collapse}td,th{padding:8px 6px;text-align:right;font-family:monospace}th{color:#7d8799;font-weight:500;font-size:11px}
+td:first-child,th:first-child{text-align:left;font-weight:700}tr.row{cursor:pointer}tr.row:hover{background:#151b26}tr.sel{background:#1a2233}
+.up{color:#2ee6a6}.dn{color:#ff4d6d}
+.top{display:flex;justify-content:space-between;align-items:flex-end}.sym{font-size:24px;font-weight:800}.px{font-size:24px;font-family:monospace}
+.btns{margin:10px 0}.btns button{background:#11151d;border:1px solid #232a38;color:#d6dbe4;padding:5px 12px;border-radius:6px;margin-right:6px;cursor:pointer}
+.btns button.on{background:#2962ff;border-color:#2962ff}a{color:#8ab4ff}
+#chart{height:420px}#status{color:#7d8799;font-size:12px;margin-top:8px}
+footer{text-align:center;color:#5d6678;padding:14px;font-size:12px}
+@media(max-width:800px){main{grid-template-columns:1fr}}
+</style></head><body>
+<header><h1>RDN Meme <span>TERMINAL.</span></h1><div class="live"><span class="dot"></span><span id="clock">--:--</span></div></header>
+<main>
+<section class="panel"><div class="ptitle">Watchlist</div>
+<input id="q" placeholder="Search a ticker…"><table><thead><tr><th>Symbol</th><th>Last</th><th>24h</th></tr></thead><tbody id="wl"></tbody></table>
+<div id="status"></div></section>
+<section class="panel"><div class="top"><div><div class="sym" id="sym">DOGE</div><div id="nm" style="color:#7d8799"></div></div>
+<div style="text-align:right"><div class="px" id="px">—</div><div id="ch"></div></div></div>
+<div class="btns"><button data-d="1">1D</button><button data-d="7" class="on">7D</button><button data-d="30">30D</button>
+<a id="dex" target="_blank" rel="noopener" style="float:right;margin-top:6px">Chart on DexScreener ↗</a></div>
+<div id="chart"></div></section></main>
+<footer>RDN Meme Terminal · Data: CoinGecko · Not financial advice</footer>
+<script>
+const COINS=[["DOGE","dogecoin","Dogecoin"],["SHIB","shiba-inu","Shiba Inu"],["PEPE","pepe","Pepe"],["BONK","bonk","Bonk"],["WIF","dogwifcoin","dogwifhat"],["PENGU","pudgy-penguins","Pudgy Penguins"]];
+const DEX={"DOGE":"https://dexscreener.com/search?q=DOGE","SHIB":"https://dexscreener.com/ethereum/0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE","PEPE":"https://dexscreener.com/ethereum/0x6982508145454Ce325dDbE47a25d4ec3d2311933","BONK":"https://dexscreener.com/solana/DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263","WIF":"https://dexscreener.com/solana/EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm","PENGU":"https://dexscreener.com/solana/2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv"};
+const API="https://api.coingecko.com/api/v3";let prices={},sel=COINS[0],days=7,cache={};
+const $=id=>document.getElementById(id),st=m=>$("status").textContent=m;
+function fmt(p){if(p==null)return"—";if(p>=1)return"$"+p.toFixed(4);const d=Math.max(2,-Math.floor(Math.log10(p))+3);return"$"+p.toFixed(Math.min(d,12))}
+async function get(url,tries=3){for(let i=0;i<tries;i++){try{const r=await fetch(url);if(r.status===429){st("Rate limited by CoinGecko — retrying…");await new Promise(s=>setTimeout(s,(i+1)*15000));continue}if(!r.ok)throw Error(r.status);return await r.json()}catch(e){if(i==tries-1)throw e;await new Promise(s=>setTimeout(s,3000))}}throw Error("rate limited")}
+function render(){const q=$("q").value.trim().toUpperCase();$("wl").innerHTML=COINS.filter(c=>!q||c[0].includes(q)||c[2].toUpperCase().includes(q)).map(c=>{const p=prices[c[1]]||{},ch=p.usd_24h_change;return`<tr class="row ${c===sel?"sel":""}" data-s="${c[0]}"><td>${c[0]}</td><td>${fmt(p.usd)}</td><td class="${ch>=0?"up":"dn"}">${ch==null?"—":(ch>=0?"+":"")+ch.toFixed(2)+"%"}</td></tr>`}).join("");
+document.querySelectorAll("tr.row").forEach(r=>r.onclick=()=>{sel=COINS.find(c=>c[0]==r.dataset.s);render();head();loadChart()});}
+function head(){const p=prices[sel[1]]||{},ch=p.usd_24h_change;$("sym").textContent=sel[0];$("nm").textContent=sel[2]+" · USD";$("px").textContent=fmt(p.usd);$("ch").innerHTML=ch==null?"":`<span class="${ch>=0?"up":"dn"}">${(ch>=0?"+":"")+ch.toFixed(2)}% 24h</span>`;$("dex").href=DEX[sel[0]]}
+async function loadPrices(){try{prices=await get(`${API}/simple/price?ids=${COINS.map(c=>c[1]).join(",")}&vs_currencies=usd&include_24hr_change=true`);st("Updated "+new Date().toLocaleTimeString()+" · refreshes every 60s")}catch(e){st("Price update failed ("+e.message+") — showing last data, will retry")}render();head()}
+const chart=LightweightCharts.createChart($("chart"),{layout:{background:{color:"#0d1118"},textColor:"#7d8799"},grid:{vertLines:{color:"#151b26"},horzLines:{color:"#151b26"}},timeScale:{timeVisible:true,borderColor:"#232a38"},rightPriceScale:{borderColor:"#232a38"},autoSize:true});
+const series=chart.addCandlestickSeries({upColor:"#2ee6a6",downColor:"#ff4d6d",wickUpColor:"#2ee6a6",wickDownColor:"#ff4d6d",borderVisible:false,priceFormat:{type:"price",precision:10,minMove:1e-10}});
+async function loadChart(){const k=sel[1]+days,c=sel;try{const d=cache[k]&&Date.now()-cache[k].t<120000?cache[k].d:await get(`${API}/coins/${sel[1]}/ohlc?vs_currency=usd&days=${days}`);cache[k]={d,t:Date.now()};if(c!==sel)return;
+const p=d[d.length-1][4],prec=p>=1?4:Math.min(12,-Math.floor(Math.log10(p))+3);series.applyOptions({priceFormat:{type:"price",precision:prec,minMove:Math.pow(10,-prec)}});
+series.setData(d.map(x=>({time:x[0]/1000,open:x[1],high:x[2],low:x[3],close:x[4]})));chart.timeScale().fitContent();document.body.dataset.chart="ok"}catch(e){st("Chart load failed ("+e.message+") — CoinGecko may be rate limiting, try again shortly")}}
+document.querySelectorAll(".btns button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".btns button").forEach(x=>x.classList.remove("on"));b.classList.add("on");days=+b.dataset.d;loadChart()});
+$("q").oninput=render;setInterval(()=>$("clock").textContent=new Date().toLocaleTimeString(),1000);
+loadPrices().then(loadChart);setInterval(loadPrices,60000);
+</script></body></html>
