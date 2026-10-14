@@ -1,0 +1,140 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RDN Spider Desk</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#06070c;color:#d8dcef;font:12px/1.35 Inter,system-ui,sans-serif}
+.frame{margin:10px;border-radius:16px;padding:12px;background:#0a0b14;border:2px solid transparent;background-image:linear-gradient(#0a0b14,#0a0b14),linear-gradient(135deg,#00e5ff,#b26bff,#ff2bd6);background-origin:border-box;background-clip:padding-box,border-box}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.brand{font-weight:900;font-size:20px;letter-spacing:1px}.brand span{color:#ff2bd6}.brand small{display:block;font-size:10px;color:#7a7f99;font-weight:400;letter-spacing:0}
+.pills{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.pill{background:#11131f;border:1px solid #232741;border-radius:8px;padding:5px 9px;font-family:monospace}
+.pill b{color:#fff}#clock{background:linear-gradient(90deg,#00e5ff,#b26bff);color:#000;font-weight:800}
+button{font:inherit;cursor:pointer;background:#11131f;color:#d8dcef;border:1px solid #232741;border-radius:7px;padding:5px 9px}button.on{background:#2962ff;border-color:#2962ff;color:#fff}
+.warn{background:#2a1020;border:1px solid #ff2bd6;color:#ffb3ec;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-weight:700;text-align:center}
+.agents{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.ag{background:#0f111c;border:1px solid #1d2136;border-radius:10px;padding:9px;display:grid;grid-template-columns:38px 1fr auto;gap:2px 8px;align-items:center}
+.ag .ic{grid-row:1/3;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.ag .nm{font-weight:900;letter-spacing:1px}.ag .ss{color:#7a7f99;font-size:11px;grid-column:2/4}.ag .mt{font-family:monospace;font-weight:800;color:#fff;font-size:14px;text-align:right}
+.ag .qt{grid-column:1/4;color:#9aa0c0;font-style:italic;font-size:11px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel{background:#0f111c;border:1px solid #1d2136;border-radius:10px;padding:10px;margin-bottom:10px;position:relative}
+.ch-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px}.big{font-size:20px;font-weight:900;color:#fff}
+.up{color:#2ee6a6}.dn{color:#ff4d6d}.mono{font-family:monospace}
+#chart{height:340px}#bal{height:210px}
+.balwrap{position:relative}.btot{position:absolute;right:12px;top:8px;text-align:right;z-index:3}.btot .v{font-size:30px;font-weight:900;color:#2ee6a6;text-shadow:0 0 14px #2ee6a688}
+#spider{position:absolute;left:0;top:0;width:90px;height:90px;pointer-events:none;z-index:4;--c1:#ff2bd6;--c2:#39ff14;--leg:#e8e0ff}#spider svg{width:100%;height:100%;filter:drop-shadow(0 0 10px #39ff14)}
+#silk{position:absolute;inset:0;pointer-events:none;z-index:3}
+#sbub{position:absolute;left:0;top:0;z-index:5;background:#fff;color:#000;font-weight:800;padding:4px 8px;border-radius:9px;white-space:nowrap;pointer-events:none;border-bottom:3px solid #ff2bd6}
+.lab{font-size:10px;color:#7a7f99;letter-spacing:1px;text-transform:uppercase;font-weight:700}
+.bottom{display:grid;grid-template-columns:1.6fr 1fr;gap:10px}
+table{width:100%;border-collapse:collapse;font-family:monospace;font-size:11px}th,td{padding:5px 4px;text-align:right;border-bottom:1px solid #161a2b}th{color:#7a7f99;font-weight:500}td:first-child,th:first-child{text-align:left}
+.tag{padding:1px 5px;border-radius:4px;font-weight:800;font-size:10px}.L{background:#0f3d2f;color:#2ee6a6}.S{background:#3d0f1c;color:#ff4d6d}.C{background:#2a2a3a;color:#ccc}
+#tape{max-height:300px;overflow:auto}
+.sig{display:grid;grid-template-columns:110px 1fr 60px;gap:6px;align-items:center;margin:7px 0;font-family:monospace;font-size:11px}
+.bar{height:6px;background:#1a1d2e;border-radius:3px;position:relative}.bar i{position:absolute;top:0;bottom:0;border-radius:3px}
+#verdict{width:100%;font-size:20px;font-weight:900;padding:14px;margin-top:8px;border:none;color:#fff}
+.vL{background:linear-gradient(90deg,#0d8a62,#2ee6a6)!important}.vS{background:linear-gradient(90deg,#c2185b,#ff4d6d)!important}.vW{background:#2a2d40!important}
+footer{text-align:center;color:#7a7f99;padding:8px;font-size:11px}a{color:#8ab4ff}
+@media(max-width:820px){.agents{grid-template-columns:repeat(2,1fr)}.bottom{grid-template-columns:1fr}#chart{height:260px}.btot .v{font-size:22px}#spider{width:64px;height:64px}}
+@media(max-width:420px){.agents{grid-template-columns:1fr}}
+</style></head><body><svg width="0" height="0" style="position:absolute"><style>.lg{stroke:var(--leg);stroke-width:2.2;fill:none;stroke-linecap:round}.L{transform-origin:32px 34px;animation:wg .18s infinite alternate ease-in-out}.R{transform-origin:32px 34px;animation:wg .18s infinite alternate-reverse ease-in-out}@keyframes wg{from{transform:rotate(-7deg)}to{transform:rotate(7deg)}}</style><defs><symbol id="spd" viewBox="0 0 64 64"><g class="L"><path class="lg" d="M28 30 Q16 18 8 22"/><path class="lg" d="M27 33 Q14 28 5 34"/><path class="lg" d="M27 36 Q14 40 6 48"/><path class="lg" d="M28 39 Q18 50 12 58"/></g>
+<g class="R"><path class="lg" d="M36 30 Q48 18 56 22"/><path class="lg" d="M37 33 Q50 28 59 34"/><path class="lg" d="M37 36 Q50 40 58 48"/><path class="lg" d="M36 39 Q46 50 52 58"/></g>
+<ellipse cx="32" cy="42" rx="10" ry="12" fill="#1a0b2e" stroke="var(--c1)" stroke-width="1.5"/><path d="M28 40 L32 46 L36 40 M28 46 L32 50 L36 46" stroke="#ff3860" stroke-width="2" fill="none"/>
+<circle cx="32" cy="28" r="7" fill="#1a0b2e" stroke="var(--c2)" stroke-width="1.5"/><circle cx="29" cy="27" r="1.8" fill="var(--c2)"/><circle cx="35" cy="27" r="1.8" fill="var(--c2)"/><circle cx="31" cy="24.5" r="1" fill="var(--c1)"/><circle cx="33" cy="24.5" r="1" fill="var(--c1)"/></symbol></defs></svg>
+<div class="frame">
+<header><div class="brand">🕷️ RDN <span>SPIDER</span> DESK<small>6 paper agents · BTC/USDT · <a href="../">Terminal</a> · <a href="../skull/">Spider Terminal</a></small></div>
+<div class="pills"><div class="pill">PAPER BANK <b id="hbank">$1,000.00</b></div><div class="pill">BTC <b id="hbtc">—</b></div><button id="snd">🔇 SOUND OFF</button><div class="pill" id="clock">--:--:-- UTC</div></div></header>
+<div class="warn">📝 Paper trading · simulated money · no real orders · not financial advice</div>
+<div class="agents">
+<div class="ag"><div class="ic" style="background:#fff">🕷️</div><div class="nm">CHIEF</div><div class="mt" id="mChief">—</div><div class="ss" id="sChief">reading the desk</div><div class="qt" id="qChief"></div></div>
+<div class="ag"><div class="ic" style="background:#9be15d">👀</div><div class="nm" style="color:#9be15d">SCAN</div><div class="mt" id="mScan">—</div><div class="ss" id="sScan">order book imbalance</div><div class="qt" id="qScan"></div></div>
+<div class="ag"><div class="ic" style="background:#ff6b8b">🧪</div><div class="nm" style="color:#ff6b8b">VET</div><div class="mt" id="mVet">—</div><div class="ss" id="sVet">24h change / funding</div><div class="qt" id="qVet"></div></div>
+<div class="ag"><div class="ic" style="background:#ff7ad9">📐</div><div class="nm" style="color:#ff7ad9">SIZE</div><div class="mt" id="mSize">—</div><div class="ss" id="sSize">next paper size (50% of bank)</div><div class="qt" id="qSize"></div></div>
+<div class="ag"><div class="ic" style="background:#5d8bff">⚡</div><div class="nm" style="color:#5d8bff">FILLS</div><div class="mt" id="mFills">—</div><div class="ss" id="sFills">last paper fill</div><div class="qt" id="qFills"></div></div>
+<div class="ag"><div class="ic" style="background:#ffa94d">🛡️</div><div class="nm" style="color:#ffa94d">RISK</div><div class="mt" id="mRisk">—</div><div class="ss" id="sRisk">wins / losses</div><div class="qt" id="qRisk"></div></div>
+</div>
+<div class="panel"><div class="ch-head"><span class="big">₿ BTC/USDT</span><span class="big mono" id="px">—</span><span id="chg" class="mono"></span>
+<span class="pill">24H VOL <b id="vol">—</b></span><span class="pill" id="fundP" style="display:none">FUNDING <b id="fund">—</b></span>
+<span style="margin-left:auto"><button data-i="1m" class="on">1m</button> <button data-i="5m">5m</button> <button data-i="1h">1h</button></span></div>
+<div class="lab" id="emaLab">EMA 9 / EMA 21 · source: Binance (data-stream.binance.vision)</div><div id="chart"></div></div>
+<div class="panel balwrap"><div class="lab">Balance · live — <b>simulated paper account</b>, started $1,000</div>
+<div class="btot"><div class="v" id="bv">$1,000.00</div><div class="mono" id="bpl"></div></div>
+<div id="bal"></div><canvas id="silk"></canvas><div id="spider"><svg viewBox="0 0 64 64"><use href="#spd"/></svg></div><div id="sbub">🕷️ warming up</div></div>
+<div class="bottom">
+<div class="panel"><div class="lab">Activity tape · simulated paper trades (EMA 9/21 cross on real 1m candles, 0.1% fee)</div><div id="tape"><table><thead><tr><th>Time</th><th>Side</th><th>Size</th><th>Price</th><th>Notional</th><th>P&amp;L</th></tr></thead><tbody id="tb"></tbody></table></div></div>
+<div class="panel"><div class="lab">Verdict · BTC/USDT</div><div id="sigs"></div>
+<button id="verdict" class="vW">WAIT</button><div style="font-size:10px;color:#7a7f99;margin-top:6px">Clicking only places a <b>paper</b> trade in this page. No real orders.</div></div>
+</div>
+<footer>RDN Spider Desk · Data: Binance public market data · Paper trading · simulated money · no real orders · not financial advice</footer>
+</div>
+<script>
+const R="https://data-api.binance.vision/api/v3",WS="wss://data-stream.binance.vision/stream?streams=";
+const $=i=>document.getElementById(i),f$=n=>n.toLocaleString("en-US",{style:"currency",currency:"USD"}),fp=n=>n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+let iv="1m",last=null,sound=false,actx,book={imb:0,spr:0},funding=null,t24=null;
+// ---- main chart
+const opt={layout:{background:{color:"#0f111c"},textColor:"#7a7f99"},grid:{vertLines:{color:"#151829"},horzLines:{color:"#151829"}},timeScale:{timeVisible:true,borderColor:"#232741"},rightPriceScale:{borderColor:"#232741"},autoSize:true};
+const ch=LightweightCharts.createChart($("chart"),opt);
+const cs=ch.addCandlestickSeries({upColor:"#2ee6a6",downColor:"#ff4d6d",wickUpColor:"#2ee6a6",wickDownColor:"#ff4d6d",borderVisible:false});
+const vs=ch.addHistogramSeries({priceScaleId:"v",priceFormat:{type:"volume"}});ch.priceScale("v").applyOptions({scaleMargins:{top:.82,bottom:0}});
+const e9=ch.addLineSeries({color:"#b26bff",lineWidth:1,priceLineVisible:false,lastValueVisible:false}),e21=ch.addLineSeries({color:"#00e5ff",lineWidth:1,priceLineVisible:false,lastValueVisible:false});
+const mk=k=>({time:k[0]/1000,open:+k[1],high:+k[2],low:+k[3],close:+k[4],vol:+k[5]});
+function ema(a,n){const k=2/(n+1);let e=a[0],o=[];for(const v of a){e=v*k+e*(1-k);o.push(e)}return o}
+let candles=[],kws;
+async function loadChart(){const d=await (await fetch(`${R}/klines?symbol=BTCUSDT&interval=${iv}&limit=300`)).json();candles=d.map(mk);drawAll();
+ if(kws)kws.close();kws=new WebSocket(WS+"btcusdt@kline_"+iv);kws.onmessage=e=>{const k=JSON.parse(e.data).data.k,c={time:k.t/1000,open:+k.o,high:+k.h,low:+k.l,close:+k.c,vol:+k.v};
+ const L=candles[candles.length-1];if(L&&L.time===c.time)candles[candles.length-1]=c;else if(!L||c.time>L.time){candles.push(c);if(candles.length>400)candles.shift()}
+ cs.update(c);vs.update({time:c.time,value:c.vol,color:c.close>=c.open?"#2ee6a655":"#ff4d6d55"});const cl=candles.map(x=>x.close),a=ema(cl,9),b=ema(cl,21);e9.update({time:c.time,value:a.at(-1)});e21.update({time:c.time,value:b.at(-1)})}}
+function drawAll(){cs.setData(candles);vs.setData(candles.map(c=>({time:c.time,value:c.vol,color:c.close>=c.open?"#2ee6a655":"#ff4d6d55"})));const cl=candles.map(x=>x.close),a=ema(cl,9),b=ema(cl,21);
+ e9.setData(candles.map((c,i)=>({time:c.time,value:a[i]})));e21.setData(candles.map((c,i)=>({time:c.time,value:b[i]})))}
+document.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-i]").forEach(x=>x.classList.remove("on"));b.classList.add("on");iv=b.dataset.i;loadChart()});
+// ---- paper strategy on 1m candles (independent of the chart tab)
+const P={cash:1000,pos:0,side:null,entry:0,qty:0,trades:[],w:0,l:0,hist:[],peak:1000,dd:0};let m1=[];
+function equity(px){return P.cash+(P.side?P.qty*(P.side==="LONG"?px-P.entry:P.entry-px):0)}
+function trade(side,px,t,manual){const fee=.001;if(P.side){const pnl=P.qty*(P.side==="LONG"?px-P.entry:P.entry-px)-P.qty*px*fee;P.cash+=pnl;pnl>=0?P.w++:P.l++;
+  P.trades.unshift({t,side:"CLOSE",qty:P.qty,px,not:P.qty*px,pnl,m:manual});bub(pnl);P.side=null;P.qty=0}
+ if(side!=="CLOSE"){const not=P.cash*.5;P.qty=not/px;P.entry=px;P.side=side;P.cash-=not*fee;P.trades.unshift({t,side,qty:P.qty,px,not,pnl:null,m:manual})}
+ if(P.trades.length>60)P.trades.length=60;if(sound&&!manual)beep(side!=="SHORT")}
+function mark(t,px){const e=equity(px);const h=P.hist,tt=Math.floor(t);if(h.length&&h.at(-1).time>=tt)h.at(-1).value=e;else h.push({time:tt,value:e});P.peak=Math.max(P.peak,e);P.dd=Math.max(P.dd,(P.peak-e)/P.peak*100)}
+async function startPaper(){const d=await (await fetch(`${R}/klines?symbol=BTCUSDT&interval=1m&limit=500`)).json();m1=d.map(mk);
+ const cl=m1.map(c=>c.close),a=ema(cl,9),b=ema(cl,21);for(let i=22;i<m1.length-1;i++){const x=a[i-1]-b[i-1],y=a[i]-b[i];if(x<=0&&y>0)trade("LONG",m1[i].close,m1[i].time);if(x>=0&&y<0)trade("SHORT",m1[i].close,m1[i].time);mark(m1[i].time,m1[i].close)}
+ const w=new WebSocket(WS+"btcusdt@kline_1m");w.onmessage=e=>{const k=JSON.parse(e.data).data.k,c=mk([k.t,k.o,k.h,k.l,k.c,k.v]);if(m1.at(-1).time===c.time)m1[m1.length-1]=c;else m1.push(c);
+  if(k.x){const cl=m1.map(c=>c.close),a=ema(cl,9),b=ema(cl,21),n=cl.length-1,x=a[n-1]-b[n-1],y=a[n]-b[n];if(x<=0&&y>0)trade("LONG",c.close,Date.now()/1000);if(x>=0&&y<0)trade("SHORT",c.close,Date.now()/1000)}};
+ render()}
+// ---- live ticker, book, funding
+new WebSocket(WS+"btcusdt@ticker/btcusdt@depth20@1000ms").onmessage=e=>{const m=JSON.parse(e.data);if(m.stream.endsWith("ticker")){t24=m.data;last=+t24.c}else{const d=m.data,bq=d.bids.reduce((s,x)=>s+ +x[1],0),aq=d.asks.reduce((s,x)=>s+ +x[1],0);
+ book={imb:(bq-aq)/(bq+aq),spr:(d.asks[0][0]-d.bids[0][0])/d.bids[0][0]*1e4}}};
+fetch("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT").then(r=>r.ok?r.json():null).then(d=>{if(d&&d.lastFundingRate!=null){funding=+d.lastFundingRate;$("fundP").style.display=""}}).catch(()=>{});
+function signals(){const cl=m1.map(c=>c.close);if(cl.length<30)return null;const a=ema(cl,9),b=ema(cl,21),px=last||cl.at(-1);
+ const mom=Math.max(-1,Math.min(1,(a.at(-1)-b.at(-1))/b.at(-1)*1000));const v=m1.slice(-5).reduce((s,c)=>s+c.vol,0)/5,va=m1.slice(-60).reduce((s,c)=>s+c.vol,0)/60;
+ const vr=Math.max(-1,Math.min(1,(v/va-1)))*Math.sign(mom||1);const ob=Math.max(-1,Math.min(1,book.imb*2));const fu=funding==null?null:Math.max(-1,Math.min(1,-funding*5000));
+ const s=[["momentum (EMA9-21)",mom],["volume vs 1h avg",vr],["book imbalance",ob]];if(fu!=null)s.push(["funding (contrarian)",fu]);
+ const score=s.reduce((t,x)=>t+x[1],0)/s.length;return{s,score,v:score>.25?"LONG":score<-.25?"SHORT":"WAIT"}}
+$("verdict").onclick=()=>{const g=signals();if(!g||!last)return;if(g.v==="WAIT"){if(P.side)trade("CLOSE",last,Date.now()/1000,true)}else if(P.side!==g.v)trade(g.v,last,Date.now()/1000,true);render()};
+// ---- balance chart + spider
+const bc=LightweightCharts.createChart($("bal"),{...opt,rightPriceScale:{visible:false},timeScale:{visible:false},grid:{vertLines:{visible:false},horzLines:{color:"#151829"}},handleScroll:false,handleScale:false});
+bc.priceScale("right").applyOptions({scaleMargins:{top:.3,bottom:.2}});const bs=bc.addAreaSeries({lineColor:"#2ee6a6",topColor:"#2ee6a644",bottomColor:"#2ee6a600",lineWidth:2,priceLineVisible:false});
+let spx=60,spy=60,bubT=0;function bub(p){$("sbub").textContent=(p>=0?"+":"−")+f$(Math.abs(p)).replace("$","$")+(p>=0?" 🕷️💰":" 🕸️");$("sbub").style.borderBottomColor=p>=0?"#2ee6a6":"#ff4d6d";bubT=Date.now()}
+(function loop(t){const wrap=document.querySelector(".balwrap"),cv=$("silk"),W=wrap.clientWidth,H=wrap.clientHeight;cv.width=W;cv.height=H;const g=cv.getContext("2d");
+ const L=P.hist.at(-1);let tx=W*.7,ty=H*.5;if(L){const x=bc.timeScale().timeToCoordinate(L.time),y=bs.priceToCoordinate(L.value),o=$("bal").offsetTop;if(x!=null&&y!=null){tx=x+$("bal").offsetLeft;ty=y+o}}
+ const sz=$("spider").offsetWidth;spx+=(tx-sz/2-spx)*.08;spy+=(ty-sz/2-spy)*.08;const wob=Math.sin(t/110)*3;
+ g.strokeStyle="rgba(235,230,255,.5)";g.lineWidth=1;g.beginPath();g.moveTo(spx+sz/2,0);g.lineTo(spx+sz/2,spy+sz/2+wob);g.stroke();g.beginPath();g.arc(tx,ty,4,0,7);g.fillStyle="#ff2bd6";g.fill();
+ $("spider").style.transform=`translate(${spx}px,${spy+wob}px)`;const bw=$("sbub").offsetWidth;$("sbub").style.transform=`translate(${Math.max(4,spx-bw-4)}px,${spy-6+wob}px)`;
+ $("sbub").style.opacity=Date.now()-bubT<15000?1:.75;requestAnimationFrame(loop)})(0);
+// ---- render every second
+function render(){const px=last||(m1.at(-1)||{}).close;if(!px)return;mark(Date.now()/1000,px);bs.setData(P.hist);bc.timeScale().fitContent();bc.timeScale().applyOptions({rightOffset:Math.max(5,P.hist.length*.12)});const col=e=>e;
+ const e=equity(px),pl=e-1000,cc=pl>=0?"#2ee6a6":"#ff4d6d";bs.applyOptions({lineColor:cc,topColor:cc+"44",bottomColor:cc+"00"});$("bv").style.color=cc;$("bv").textContent=f$(e);$("hbank").textContent=f$(e);$("bpl").innerHTML=`P/L <span class="${pl>=0?"up":"dn"}">${pl>=0?"+":""}${f$(pl)} (${(pl/10).toFixed(2)}%)</span> · max DD ${P.dd.toFixed(2)}%`;
+ $("hbtc").textContent="$"+fp(px);$("px").textContent=fp(px);
+ if(t24){$("chg").innerHTML=`<span class="${+t24.P>=0?"up":"dn"}">${+t24.P>=0?"+":""}${(+t24.P).toFixed(2)}% 24h</span>`;$("vol").textContent="$"+(+t24.q/1e9).toFixed(2)+"B"}
+ if(funding!=null)$("fund").textContent=(funding*100).toFixed(4)+"%";
+ $("tb").innerHTML=P.trades.map(r=>`<tr><td>${new Date(r.t*1000).toISOString().slice(11,19)}${r.m?"*":""}</td><td><span class="tag ${r.side[0]}">${r.side}</span></td><td>${r.qty.toFixed(5)}</td><td>${fp(r.px)}</td><td>${f$(r.not)}</td><td class="${r.pnl==null?"":r.pnl>=0?"up":"dn"}">${r.pnl==null?"open":(r.pnl>=0?"+":"")+f$(r.pnl)}</td></tr>`).join("");
+ const g=signals();if(g){$("sigs").innerHTML=g.s.map(([n,v])=>`<div class="sig"><span>${n}</span><div class="bar"><i style="left:${v>=0?50:50+v*50}%;width:${Math.abs(v)*50}%;background:${v>=0?"#2ee6a6":"#ff4d6d"}"></i></div><span class="${v>=0?"up":"dn"}">${v>=0?"+":""}${v.toFixed(2)}</span></div>`).join("")+(funding==null?'<div style="font-size:10px;color:#7a7f99">funding hidden (futures API not reachable here)</div>':"");
+  $("verdict").textContent=(g.v==="WAIT"?"WAIT":"PAPER "+g.v)+" · score "+g.score.toFixed(2);$("verdict").className="v"+g.v[0]}
+ const lt=P.trades[0];$("mChief").textContent=P.side||"FLAT";$("sChief").textContent=g?"verdict: "+g.v:"warming up";$("qChief").textContent=P.side?`"riding a paper ${P.side.toLowerCase()} from ${fp(P.entry)}"`:'"flat, waiting for a cross"';
+ $("mScan").textContent=(book.imb>=0?"+":"")+book.imb.toFixed(2);$("qScan").textContent=`"spread ${book.spr.toFixed(3)} bps · ${book.imb>=0?"bids":"asks"} heavier"`;
+ if(t24){$("mVet").textContent=(+t24.P>=0?"+":"")+(+t24.P).toFixed(2)+"%";$("qVet").textContent=funding!=null?`"funding ${(funding*100).toFixed(4)}%"`:`"24h range ${fp(+t24.l)}–${fp(+t24.h)}"`}
+ $("mSize").textContent=f$(P.cash*.5);$("qSize").textContent=`"≈ ${(P.cash*.5/px).toFixed(5)} BTC per paper entry"`;
+ if(lt){$("mFills").textContent="@ "+fp(lt.px);$("qFills").textContent=`"${lt.side.toLowerCase()} ${lt.qty.toFixed(5)} BTC"`}
+ $("mRisk").textContent=`${P.w}W ${P.l}L`;$("qRisk").textContent=`"max drawdown ${P.dd.toFixed(2)}%"`}
+setInterval(render,1000);setInterval(()=>$("clock").textContent=new Date().toISOString().slice(11,19)+" UTC",1000);
+function beep(up){try{actx=actx||new AudioContext();const g=actx.createGain(),o=actx.createOscillator();o.type="square";o.frequency.value=up?880:220;g.gain.value=.05;o.connect(g).connect(actx.destination);o.start();o.stop(actx.currentTime+.12)}catch(e){}}
+$("snd").onclick=()=>{sound=!sound;$("snd").textContent=sound?"🔊 SOUND ON":"🔇 SOUND OFF"};
+loadChart();startPaper();
+</script></body></html>
