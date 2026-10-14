@@ -57,7 +57,7 @@ footer{text-align:center;color:#7a7f99;padding:8px;font-size:11px}a{color:#8ab4f
 <div class="lab" id="emaLab">EMA 9 / EMA 21 · source: Binance (data-stream.binance.vision)</div><div id="chart"></div></div>
 <div class="panel balwrap"><div class="lab">Balance · live — <b>simulated paper account</b>, started $1,000</div>
 <div class="btot"><div class="v" id="bv">$1,000.00</div><div class="mono" id="bpl"></div></div>
-<div id="bal"></div><canvas id="silk"></canvas><div id="spider"><svg viewBox="0 0 64 64"><use href="#spd"/></svg></div><div id="sbub">🕷️ warming up</div></div>
+<div id="bal"></div><canvas id="silk"></canvas><div id="sbub">🕷️ warming up</div></div>
 <div class="bottom">
 <div class="panel"><div class="lab">Activity tape · simulated paper trades (EMA 9/21 cross on real 1m candles, 0.1% fee)</div><div id="tape"><table><thead><tr><th>Time</th><th>Side</th><th>Size</th><th>Price</th><th>Notional</th><th>P&amp;L</th></tr></thead><tbody id="tb"></tbody></table></div></div>
 <div class="panel"><div class="lab">Verdict · BTC/USDT</div><div id="sigs"></div>
@@ -65,6 +65,7 @@ footer{text-align:center;color:#7a7f99;padding:8px;font-size:11px}a{color:#8ab4f
 </div>
 <footer>RDN Spider Desk · Data: Binance public market data · Paper trading · simulated money · no real orders · not financial advice</footer>
 </div>
+<script src="../spider.js"></script>
 <script>
 const R="https://data-api.binance.vision/api/v3",WS="wss://data-stream.binance.vision/stream?streams=";
 const $=i=>document.getElementById(i),f$=n=>n.toLocaleString("en-US",{style:"currency",currency:"USD"}),fp=n=>n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -111,15 +112,17 @@ $("verdict").onclick=()=>{const g=signals();if(!g||!last)return;if(g.v==="WAIT")
 // ---- balance chart + spider
 const bc=LightweightCharts.createChart($("bal"),{...opt,rightPriceScale:{visible:false},timeScale:{visible:false},grid:{vertLines:{visible:false},horzLines:{color:"#151829"}},handleScroll:false,handleScale:false});
 bc.priceScale("right").applyOptions({scaleMargins:{top:.3,bottom:.2}});const bs=bc.addAreaSeries({lineColor:"#2ee6a6",topColor:"#2ee6a644",bottomColor:"#2ee6a600",lineWidth:2,priceLineVisible:false});
-let spx=60,spy=60,bubT=0;function bub(p){$("sbub").textContent=(p>=0?"+":"−")+f$(Math.abs(p)).replace("$","$")+(p>=0?" 🕷️💰":" 🕸️");$("sbub").style.borderBottomColor=p>=0?"#2ee6a6":"#ff4d6d";bubT=Date.now()}
-(function loop(t){const wrap=document.querySelector(".balwrap"),cv=$("silk"),W=wrap.clientWidth,H=wrap.clientHeight;cv.width=W;cv.height=H;const g=cv.getContext("2d");
- const L=P.hist.at(-1);let tx=W*.7,ty=H*.5;if(L){const x=bc.timeScale().timeToCoordinate(L.time),y=bs.priceToCoordinate(L.value),o=$("bal").offsetTop;if(x!=null&&y!=null){tx=x+$("bal").offsetLeft;ty=y+o}}
- const sz=$("spider").offsetWidth;spx+=(tx-sz/2-spx)*.08;spy+=(ty-sz/2-spy)*.08;const wob=Math.sin(t/110)*3;
- g.strokeStyle="rgba(235,230,255,.5)";g.lineWidth=1;g.beginPath();g.moveTo(spx+sz/2,0);g.lineTo(spx+sz/2,spy+sz/2+wob);g.stroke();g.beginPath();g.arc(tx,ty,4,0,7);g.fillStyle="#ff2bd6";g.fill();
- $("spider").style.transform=`translate(${spx}px,${spy+wob}px)`;const bw=$("sbub").offsetWidth;$("sbub").style.transform=`translate(${Math.max(4,spx-bw-4)}px,${spy-6+wob}px)`;
- $("sbub").style.opacity=Date.now()-bubT<15000?1:.75;requestAnimationFrame(loop)})(0);
+let bubT=0;function bub(p){$("sbub").textContent=(p>=0?"+":"−")+f$(Math.abs(p)).replace("$","$")+(p>=0?" 🕷️💰":" 🕸️");$("sbub").style.borderBottomColor=p>=0?"#2ee6a6":"#ff4d6d";bubT=Date.now()}
+let LINE=[],cxp=null,lt=performance.now();const SPD=new RDNSpider({S:30,c1:"#ff2bd6",c2:"#39ff14",x:40,y:60});
+function cacheLine(){const o=$("bal"),ox=o.offsetLeft,oy=o.offsetTop,ts=bc.timeScale();LINE=[];for(const p of P.hist){const x=ts.timeToCoordinate(p.time),y=bs.priceToCoordinate(p.value);if(x!=null&&y!=null)LINE.push([x+ox,y+oy])}}
+function yAt(x){if(!LINE.length)return null;if(x<=LINE[0][0])return LINE[0][1];for(let i=1;i<LINE.length;i++)if(LINE[i][0]>=x){const a=LINE[i-1],b=LINE[i],t=(x-a[0])/((b[0]-a[0])||1);return a[1]+(b[1]-a[1])*t}return LINE.at(-1)[1]}
+(function loop(t){const dt=Math.min(.05,(t-lt)/1000);lt=t;const wrap=document.querySelector(".balwrap"),cv=$("silk"),W=wrap.clientWidth,H=wrap.clientHeight;if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}const g=cv.getContext("2d");g.clearRect(0,0,W,H);
+ if(LINE.length){const end=LINE.at(-1);if(cxp==null)cxp=LINE[0][0]+20;const d=end[0]-cxp,v=RDN_REDUCED.matches?1e9:Math.max(40,Math.min(160,Math.abs(d)*1.5));cxp+=Math.sign(d)*Math.min(Math.abs(d),v*dt);
+  const y=yAt(cxp);SPD.setCarrot(cxp,y-SPD.S*.35);g.beginPath();g.arc(end[0],end[1],4,0,7);g.fillStyle="#ff2bd6";g.fill()}
+ SPD.update(dt);g.strokeStyle="rgba(235,230,255,.5)";g.lineWidth=1;g.beginPath();g.moveTo(SPD.x-SPD.S*.5*Math.cos(SPD.h),0);g.lineTo(SPD.x-SPD.S*.9*Math.cos(SPD.h),SPD.y-SPD.S*.9*Math.sin(SPD.h));g.stroke();SPD.draw(g);
+ const bw=$("sbub").offsetWidth;$("sbub").style.transform=`translate(${Math.max(4,SPD.x-bw-SPD.S*1.3)}px,${SPD.y-SPD.S*1.6}px)`;$("sbub").style.opacity=Date.now()-bubT<15000?1:.75;requestAnimationFrame(loop)})(performance.now());
 // ---- render every second
-function render(){const px=last||(m1.at(-1)||{}).close;if(!px)return;mark(Date.now()/1000,px);bs.setData(P.hist);bc.timeScale().fitContent();bc.timeScale().applyOptions({rightOffset:Math.max(5,P.hist.length*.12)});const col=e=>e;
+function render(){const px=last||(m1.at(-1)||{}).close;if(!px)return;mark(Date.now()/1000,px);bs.setData(P.hist);bc.timeScale().fitContent();bc.timeScale().applyOptions({rightOffset:Math.max(5,P.hist.length*.12)});cacheLine();
  const e=equity(px),pl=e-1000,cc=pl>=0?"#2ee6a6":"#ff4d6d";bs.applyOptions({lineColor:cc,topColor:cc+"44",bottomColor:cc+"00"});$("bv").style.color=cc;$("bv").textContent=f$(e);$("hbank").textContent=f$(e);$("bpl").innerHTML=`P/L <span class="${pl>=0?"up":"dn"}">${pl>=0?"+":""}${f$(pl)} (${(pl/10).toFixed(2)}%)</span> · max DD ${P.dd.toFixed(2)}%`;
  $("hbtc").textContent="$"+fp(px);$("px").textContent=fp(px);
  if(t24){$("chg").innerHTML=`<span class="${+t24.P>=0?"up":"dn"}">${+t24.P>=0?"+":""}${(+t24.P).toFixed(2)}% 24h</span>`;$("vol").textContent="$"+(+t24.q/1e9).toFixed(2)+"B"}

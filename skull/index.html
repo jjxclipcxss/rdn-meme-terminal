@@ -14,8 +14,8 @@ button{background:#14002a;color:#ff2bd6;border:1px solid #ff2bd6;padding:5px 10p
 canvas.c{width:100%;height:80px;display:block}.p{font-size:14px;color:#fff}.lbl{font-size:9px;color:#8a7bb0}
 aside{background:#0b0718;border:1px solid #00e5ff;border-radius:8px;padding:10px;box-shadow:0 0 10px #00e5ff55;height:fit-content}
 aside h3{margin:0 0 8px;color:#ffe600;text-shadow:0 0 6px #ffe600}aside ol{margin:0;padding-left:20px}aside li{margin:4px 0}
-.sp{position:fixed;left:0;top:0;pointer-events:none;z-index:10}.sp svg{width:100%;height:100%;filter:drop-shadow(0 0 8px var(--c2))}.src{font-size:9px;float:right}.src.b{color:#39ff14}.src.g{color:#ffe600}
-#trail{position:fixed;inset:0;pointer-events:none;z-index:9}
+.src{font-size:9px;float:right}.src.b{color:#39ff14}.src.g{color:#ffe600}
+#trail{position:fixed;inset:0;pointer-events:none;z-index:9}.bub{z-index:11}
 .bub{position:fixed;left:0;top:0;transition:opacity .4s;z-index:11;background:#fff;color:#000;font-weight:700;padding:5px 9px;border-radius:10px;white-space:nowrap;pointer-events:none;box-shadow:0 0 10px #ff2bd6}
 #st{color:#8a7bb0;padding:0 18px}footer{text-align:center;color:#6d5f90;padding:14px}a{color:#00e5ff}
 @media(max-width:800px){.wrap{grid-template-columns:1fr}}
@@ -27,7 +27,7 @@ aside h3{margin:0 0 8px;color:#ffe600;text-shadow:0 0 6px #ffe600}aside ol{margi
 <div id="bal"><div class="bl">PRACTICE BALANCE</div><div id="bv">$1,000.00</div><div id="bp">P/L $0.00 (0.00%) since start</div><button id="brst">↺ RESET</button><div class="bn">Simulated play money · not real funds · not financial advice</div></div>
 <div id="st">Loading real prices…</div>
 <div class="wrap"><div id="grid"></div><aside><h3>🏆 BIGGEST MOVERS 24H</h3><ol id="lb"></ol><p class="lbl">Line motion between polls is <b>interpolated</b> animation. Displayed price numbers are always the last real CoinGecko price.</p></aside></div>
-<canvas id="trail"></canvas>
+<canvas id="trail"></canvas><script src="../spider.js"></script>
 <svg width="0" height="0" style="position:absolute"><style>.lg{stroke:var(--leg);stroke-width:2.2;fill:none;stroke-linecap:round}.L{transform-origin:32px 34px;animation:wg .18s infinite alternate ease-in-out}.R{transform-origin:32px 34px;animation:wg .18s infinite alternate-reverse ease-in-out}@keyframes wg{from{transform:rotate(-7deg)}to{transform:rotate(7deg)}}</style><defs><symbol id="spd" viewBox="0 0 64 64"><g class="L"><path class="lg" d="M28 30 Q16 18 8 22"/><path class="lg" d="M27 33 Q14 28 5 34"/><path class="lg" d="M27 36 Q14 40 6 48"/><path class="lg" d="M28 39 Q18 50 12 58"/></g>
 <g class="R"><path class="lg" d="M36 30 Q48 18 56 22"/><path class="lg" d="M37 33 Q50 28 59 34"/><path class="lg" d="M37 36 Q50 40 58 48"/><path class="lg" d="M36 39 Q46 50 52 58"/></g>
 <ellipse cx="32" cy="42" rx="10" ry="12" fill="#1a0b2e" stroke="var(--c1)" stroke-width="1.5"/><path d="M28 40 L32 46 L36 40 M28 46 L32 50 L36 46" stroke="#ff3860" stroke-width="2" fill="none"/>
@@ -83,25 +83,25 @@ function draw(o){const c=o.el.querySelector("canvas"),w=c.width=c.clientWidth,h=
 // 9 spiders
 const PAL=[["#ff2bd6","#39ff14"],["#00e5ff","#ffe600"],["#ffe600","#ff3860"],["#39ff14","#00e5ff"],["#ff8a00","#ff2bd6"],["#b26bff","#39ff14"],["#ff3860","#00e5ff"],["#00ffa3","#ff8a00"],["#ffffff","#b26bff"]];
 const tc=$("trail"),tg=tc.getContext("2d"),SP=[];
-for(let i=0;i<9;i++){const sz=Math.round(64-i*4),[c1,c2]=PAL[i],el=document.createElement("div");el.className="sp";el.style.cssText+=`width:${sz}px;height:${sz}px;--c1:${c1};--c2:${c2};--leg:${i%2?"#e8e0ff":c2}`;
- el.innerHTML=`<svg viewBox="0 0 64 64"><use href="#spd"/></svg>`;const b=document.createElement("div");b.className="bub";b.style.opacity=0;b.style.borderBottom=`3px solid ${c1}`;
- document.body.append(el,b);SP.push({el,b,sz,x:Math.random()*innerWidth,y:innerHeight-80,tx:0,ty:0,trail:[],c1,id:null,ph:Math.random()*6})}
+for(let i=0;i<9;i++){const S=Math.round(22-i*1.1),[c1,c2]=PAL[i],b=document.createElement("div");b.className="bub";b.style.opacity=0;b.style.borderBottom=`3px solid ${c1}`;document.body.append(b);
+ const sp=new RDNSpider({S,c1,c2,leg:i%2?"#e8e0ff":c2,speed:150+i*10,x:innerWidth*(.1+.08*i),y:innerHeight-60});SP.push({sp,b,sz:S*2.6,trail:[],c1,id:null})}
 function assign(){const r=order.map(i=>coins[i]).filter(o=>o.price!=null).sort((a,b)=>(Math.abs(b.recent||0)-Math.abs(a.recent||0))||(Math.abs(b.ch||0)-Math.abs(a.ch||0)));
  document.querySelectorAll(".card.hot").forEach(e=>e.classList.remove("hot"));
  SP.forEach((s,i)=>{const o=r[i];if(!o)return;if(s.id!==o.id&&i===0&&sound)beep((o.recent||o.ch)>=0);s.id=o.id;o.el.classList.add("hot");
-  const bb=o.el.getBoundingClientRect();s.tx=bb.left+bb.width-s.sz-6;s.ty=bb.top+bb.height-s.sz-14;
+  const bb=o.el.getBoundingClientRect();s.sp.setTarget(bb.left+bb.width-s.sz*.7,bb.top+bb.height-s.sz*.55);
   const pct=Math.abs(o.recent||0)>0.0005?o.recent:o.ch,lbl=Math.abs(o.recent||0)>0.0005?"1m":"24h",up=pct>=0;
   s.b.textContent=`#${i+1} ${o.sym} ${up?"+":""}${pct.toFixed(Math.abs(pct)<.1?3:1)}% ${lbl} ${up?"🚀":"🕷️"}`;
   const slot=Math.floor(Date.now()/2500)%3;s.b.style.opacity=(i%3===slot)?1:0})}
 function beep(up){actx=actx||new AudioContext();const g=actx.createGain(),os=actx.createOscillator();os.type="square";os.frequency.value=up?880:220;g.gain.value=.05;os.connect(g).connect(actx.destination);os.start();os.stop(actx.currentTime+.12)}
 $("snd").onclick=()=>{sound=!sound;$("snd").textContent=sound?"🔊 SOUND ON":"🔇 SOUND OFF"};
 addEventListener("scroll",assign);addEventListener("resize",assign);
-(function loop(t){tc.width=innerWidth;tc.height=innerHeight;
- SP.forEach((s,i)=>{s.x+=(s.tx-s.x)*0.12;s.y+=(s.ty-s.y)*0.12;const wob=Math.sin(t/100+s.ph)*3;s.trail.push([s.x+s.sz/2,s.y+s.sz/2]);if(s.trail.length>40)s.trail.shift();
-  tg.strokeStyle="rgba(235,230,255,.35)";tg.lineWidth=1;tg.beginPath();s.trail.forEach((p,k)=>k?tg.lineTo(p[0],p[1]):tg.moveTo(p[0],p[1]));tg.stroke();
-  s.el.style.transform=`translate(${s.x}px,${s.y+wob}px) rotate(${(s.tx-s.x)*0.05}deg)`;
-  const bw=s.b.offsetWidth;s.b.style.transform=`translate(${s.x+s.sz+bw>innerWidth?s.x-bw-4:s.x+s.sz-4}px,${s.y-20+wob}px)`});
- requestAnimationFrame(loop)})(0);
+let lt=performance.now();function fit(){if(tc.width!==innerWidth||tc.height!==innerHeight){tc.width=innerWidth;tc.height=innerHeight}}
+(function loop(t){const dt=(t-lt)/1000;lt=t;fit();tg.clearRect(0,0,tc.width,tc.height);
+ SP.forEach(s=>{const p=s.sp;p.update(dt);s.trail.push([p.x,p.y]);if(s.trail.length>50)s.trail.shift();
+  tg.strokeStyle="rgba(235,230,255,.35)";tg.lineWidth=1;tg.beginPath();s.trail.forEach((q,k)=>k?tg.lineTo(q[0],q[1]):tg.moveTo(q[0],q[1]));tg.stroke()});
+ SP.forEach(s=>s.sp.draw(tg));
+ SP.forEach(s=>{const p=s.sp,bw=s.b.offsetWidth;s.b.style.transform=`translate(${p.x+s.sz/2+bw>innerWidth?p.x-bw-s.sz/2:p.x+s.sz/2}px,${p.y-s.sz*.6-18}px)`});
+ requestAnimationFrame(loop)})(performance.now());
 // practice balance (simulated only)
 const BK="rdnSpiderPractice";let PB=JSON.parse(localStorage.getItem(BK)||"null"),lastV=null;
 function balTick(){const ids=order.filter(i=>coins[i].price!=null);if(!ids.length)return;
